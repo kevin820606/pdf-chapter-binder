@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-chapter-binder"
+version = "0.1.0"
+description = "Merge chapter PDFs in CLI order with auto-generated outline titles."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+dependencies = [
+    "pikepdf>=10.5.1",
+    "typer>=0.24.1",
+]
+
+[project.scripts]
+pdf-chapter-binder = "pdf_chapter_binder.cli:main"
