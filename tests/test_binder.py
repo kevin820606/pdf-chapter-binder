@@ -6,14 +6,32 @@ from pdf_chapter_binder import binder
 
 
 class BinderPlanTests(unittest.TestCase):
-    def test_build_outline_plan_preserves_cli_input_order(self):
+    def test_build_entries_from_paths_preserves_cli_input_order(self):
         input_paths = [
             "/tmp/Book_----_(3._Later_Chapter).pdf",
             "/tmp/Book_----_(Cover_Page).pdf",
             "/tmp/Book_----_(1._Introduction).pdf",
         ]
 
-        plan = binder.build_outline_plan(input_paths, [4, 1, 2])
+        entries = binder.build_entries_from_paths(input_paths)
+
+        self.assertEqual(
+            [entry.title for entry in entries],
+            ["3. Later Chapter", "Cover Page", "1. Introduction"],
+        )
+        self.assertEqual(
+            [entry.path for entry in entries],
+            [Path(path) for path in input_paths],
+        )
+
+    def test_build_outline_plan_preserves_entry_order(self):
+        entries = [
+            binder.BinderEntry("3. Later Chapter", Path("/tmp/three.pdf")),
+            binder.BinderEntry("Cover Page", Path("/tmp/cover.pdf")),
+            binder.BinderEntry("1. Introduction", Path("/tmp/intro.pdf")),
+        ]
+
+        plan = binder.build_outline_plan(entries, [4, 1, 2])
 
         self.assertEqual(
             [entry.title for entry in plan],
@@ -22,10 +40,10 @@ class BinderPlanTests(unittest.TestCase):
         self.assertEqual([entry.page_number for entry in plan], [0, 4, 5])
 
     def test_bind_pdfs_opens_sources_in_input_order_and_writes_outlines(self):
-        input_paths = [
-            "/tmp/Book_----_(3._Later_Chapter).pdf",
-            "/tmp/Book_----_(Cover_Page).pdf",
-            "/tmp/Book_----_(1._Introduction).pdf",
+        entries = [
+            binder.BinderEntry("3. Later Chapter", Path("/tmp/three.pdf")),
+            binder.BinderEntry("Cover Page", Path("/tmp/cover.pdf")),
+            binder.BinderEntry("1. Introduction", Path("/tmp/intro.pdf")),
         ]
         open_calls = []
         opened_pdfs = []
@@ -82,9 +100,9 @@ class BinderPlanTests(unittest.TestCase):
             def open(cls, path):
                 open_calls.append(path)
                 page_count = {
-                    Path(input_paths[0]): 4,
-                    Path(input_paths[1]): 1,
-                    Path(input_paths[2]): 2,
+                    entries[0].path: 4,
+                    entries[1].path: 1,
+                    entries[2].path: 2,
                 }[path]
                 pdf = cls(page_count)
                 opened_pdfs.append(pdf)
@@ -103,10 +121,11 @@ class BinderPlanTests(unittest.TestCase):
             def close(self):
                 self.closed = True
 
-        with patch.object(binder, "Pdf", FakePdf), patch.object(
-            binder, "OutlineItem", FakeOutlineItem
+        with (
+            patch.object(binder, "Pdf", FakePdf),
+            patch.object(binder, "OutlineItem", FakeOutlineItem),
         ):
-            binder.bind_pdfs(input_paths, "/tmp/output.pdf")
+            binder.bind_pdfs(entries, "/tmp/output.pdf")
 
         expected_outline = [
             FakeOutlineItem("3. Later Chapter", 0),
@@ -114,7 +133,7 @@ class BinderPlanTests(unittest.TestCase):
             FakeOutlineItem("1. Introduction", 5),
         ]
 
-        self.assertEqual(open_calls, [Path(path) for path in input_paths])
+        self.assertEqual(open_calls, [entry.path for entry in entries])
         self.assertEqual(events, ["open_outline", "save"])
         self.assertEqual(
             FakePdf.last_new_pdf.pages,
@@ -126,15 +145,17 @@ class BinderPlanTests(unittest.TestCase):
         )
         self.assertEqual(FakePdf.last_new_pdf.saved_to, Path("/tmp/output.pdf"))
         self.assertEqual(FakePdf.last_new_pdf.outline.root, expected_outline)
-        self.assertEqual(FakePdf.last_new_pdf.outline.root.appended_items, expected_outline)
+        self.assertEqual(
+            FakePdf.last_new_pdf.outline.root.appended_items, expected_outline
+        )
         self.assertEqual(FakePdf.last_new_pdf.saved_outline_snapshot, expected_outline)
         self.assertTrue(all(pdf.closed for pdf in opened_pdfs))
         self.assertTrue(FakePdf.last_new_pdf.closed)
 
     def test_bind_pdfs_closes_all_pdfs_when_save_fails(self):
-        input_paths = [
-            "/tmp/Book_----_(Cover_Page).pdf",
-            "/tmp/Book_----_(1._Introduction).pdf",
+        entries = [
+            binder.BinderEntry("Cover Page", Path("/tmp/cover.pdf")),
+            binder.BinderEntry("1. Introduction", Path("/tmp/intro.pdf")),
         ]
         opened_pdfs = []
 
@@ -169,8 +190,8 @@ class BinderPlanTests(unittest.TestCase):
             @classmethod
             def open(cls, path):
                 page_count = {
-                    Path(input_paths[0]): 1,
-                    Path(input_paths[1]): 2,
+                    entries[0].path: 1,
+                    entries[1].path: 2,
                 }[path]
                 pdf = cls(page_count)
                 opened_pdfs.append(pdf)
@@ -185,11 +206,12 @@ class BinderPlanTests(unittest.TestCase):
             def close(self):
                 self.closed = True
 
-        with patch.object(binder, "Pdf", FakePdf), patch.object(
-            binder, "OutlineItem", FakeOutlineItem
+        with (
+            patch.object(binder, "Pdf", FakePdf),
+            patch.object(binder, "OutlineItem", FakeOutlineItem),
+            self.assertRaisesRegex(RuntimeError, "save failed"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "save failed"):
-                binder.bind_pdfs(input_paths, "/tmp/output.pdf")
+            binder.bind_pdfs(entries, "/tmp/output.pdf")
 
         self.assertTrue(all(pdf.closed for pdf in opened_pdfs))
         self.assertTrue(FakePdf.last_new_pdf.closed)

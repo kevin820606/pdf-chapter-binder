@@ -2,12 +2,17 @@
 
 `pdf-chapter-binder` merges a list of PDFs into a single output file and creates one top-level bookmark per input file.
 
-The merge order is exactly the order you pass on the command line. Bookmark titles are inferred from a parenthesized token in each filename, so you do not need to type an outline map by hand.
+The merge order is exactly the order you pass on the command line. You can supply titles in three ways:
+
+- explicit JSON manifest
+- explicit `--entry "Title::path.pdf"` pairs
+- inferred from parenthesized filename tokens as a fallback
 
 ## Features
 
 - Merges PDFs in the exact CLI order.
-- Generates outline bookmarks automatically from filenames.
+- Supports explicit titles via manifest or `--entry`.
+- Falls back to automatic filename-derived titles.
 - Normalizes titles into readable text.
 - Preserves Roman numerals such as `IV` and a small acronym allowlist such as `UN`, `USA`, and `NATO`.
 - Exposes a simple Typer-based CLI.
@@ -22,11 +27,27 @@ uv sync
 
 ## Usage
 
+Filename fallback:
+
 ```bash
 uv run pdf-chapter-binder --output merged.pdf \
   "/path/to/Book_----_(Cover_Page).pdf" \
   "/path/to/Book_----_(1._Introduction).pdf" \
   "/path/to/Book_----_(Book_IV).pdf"
+```
+
+Explicit entries:
+
+```bash
+uv run pdf-chapter-binder --output merged.pdf \
+  --entry "Cover::/path/to/cover.pdf" \
+  --entry "Book IV::/path/to/book4.pdf"
+```
+
+Manifest:
+
+```bash
+uv run pdf-chapter-binder --output merged.pdf --manifest chapters.json
 ```
 
 You can also invoke the module directly:
@@ -43,7 +64,7 @@ uv run pdf-chapter-binder --help
 
 ## Filename Rules
 
-The tool extracts the first parenthesized token from the filename stem and turns that into the bookmark title.
+When you use plain positional PDF paths, the tool extracts the first parenthesized token from the filename stem and turns that into the bookmark title.
 
 Examples:
 
@@ -54,6 +75,25 @@ Examples:
 - `Book_----_(Appendix_1._Project_Mars).pdf` -> `Appendix 1. Project Mars`
 
 If no parenthesized token is present, the tool raises a `ValueError`.
+
+## Manifest Format
+
+The manifest is a flat JSON array. Order is preserved exactly.
+
+```json
+[
+  {"title": "Cover", "path": "cover.pdf"},
+  {"title": "Book IV", "path": "book4.pdf"}
+]
+```
+
+Input mode precedence:
+
+- `--manifest`
+- `--entry`
+- positional PDF paths
+
+Exactly one input mode is allowed per run.
 
 ## Development
 

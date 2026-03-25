@@ -1,0 +1,26 @@
+exclude = { glob = ["testing file/**", "tests/**.rpy"] }
+
+#:schema https://www.schemastore.org/prek.json
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-merge-conflict" },
+  { id = "check-added-large-files" },
+  { id = "end-of-file-fixer" },
+  { id = "trailing-whitespace" },
+  { id = "mixed-line-ending" },
+  { id = "check-yaml" },
+  { id = "check-json" },
+  { id = "check-toml" },
+]
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.15.7"
+hooks = [
+  { id = "ruff", args = [
+    "--fix",
+    "--select=E,F,UP,B,SIM,I",
+  ] },
+  { id = "ruff-format" },
+]

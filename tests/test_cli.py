@@ -1,10 +1,11 @@
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from pdf_chapter_binder import cli
 from typer.testing import CliRunner
 
+from pdf_chapter_binder import binder, cli
 
 RUNNER = CliRunner()
 
@@ -17,14 +18,71 @@ class CliTests(unittest.TestCase):
                 [
                     "--output",
                     "merged.pdf",
-                    "b.pdf",
-                    "a.pdf",
+                    "book_(B).pdf",
+                    "book_(A).pdf",
                 ],
             )
 
         self.assertEqual(result.exit_code, 0, result.stdout)
         bind_pdfs.assert_called_once_with(
-            [Path("b.pdf"), Path("a.pdf")],
+            [
+                binder.BinderEntry("B", Path("book_(B).pdf")),
+                binder.BinderEntry("A", Path("book_(A).pdf")),
+            ],
+            Path("merged.pdf"),
+        )
+
+    def test_invokes_typer_with_explicit_entries(self):
+        with patch.object(cli, "bind_pdfs") as bind_pdfs:
+            result = RUNNER.invoke(
+                cli.app,
+                [
+                    "--output",
+                    "merged.pdf",
+                    "--entry",
+                    "Cover::cover.pdf",
+                    "--entry",
+                    "Book IV::book4.pdf",
+                ],
+            )
+
+        self.assertEqual(result.exit_code, 0, result.stdout)
+        bind_pdfs.assert_called_once_with(
+            [
+                binder.BinderEntry("Cover", Path("cover.pdf")),
+                binder.BinderEntry("Book IV", Path("book4.pdf")),
+            ],
+            Path("merged.pdf"),
+        )
+
+    def test_invokes_typer_with_manifest(self):
+        with RUNNER.isolated_filesystem():
+            Path("chapters.json").write_text(
+                json.dumps(
+                    [
+                        {"title": "Cover", "path": "cover.pdf"},
+                        {"title": "Book IV", "path": "book4.pdf"},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(cli, "bind_pdfs") as bind_pdfs:
+                result = RUNNER.invoke(
+                    cli.app,
+                    [
+                        "--output",
+                        "merged.pdf",
+                        "--manifest",
+                        "chapters.json",
+                    ],
+                )
+
+        self.assertEqual(result.exit_code, 0, result.stdout)
+        bind_pdfs.assert_called_once_with(
+            [
+                binder.BinderEntry("Cover", Path("cover.pdf")),
+                binder.BinderEntry("Book IV", Path("book4.pdf")),
+            ],
             Path("merged.pdf"),
         )
 
@@ -36,6 +94,35 @@ class CliTests(unittest.TestCase):
 
     def test_requires_at_least_one_input(self):
         result = RUNNER.invoke(cli.app, ["--output", "merged.pdf"])
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIsNotNone(result.exception)
+
+    def test_rejects_mixed_input_modes(self):
+        result = RUNNER.invoke(
+            cli.app,
+            [
+                "--output",
+                "merged.pdf",
+                "--entry",
+                "Cover::cover.pdf",
+                "a.pdf",
+            ],
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIsNotNone(result.exception)
+
+    def test_rejects_malformed_entry(self):
+        result = RUNNER.invoke(
+            cli.app,
+            [
+                "--output",
+                "merged.pdf",
+                "--entry",
+                "CoverOnly",
+            ],
+        )
 
         self.assertNotEqual(result.exit_code, 0)
         self.assertIsNotNone(result.exception)
