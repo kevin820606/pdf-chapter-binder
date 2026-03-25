@@ -68,7 +68,7 @@ When you use plain positional PDF paths, the tool extracts the first parenthesiz
 
 Examples:
 
-- `DahlRobertAlan_1989_(Cover)_Whogovernsdemocracyan.pdf` -> `Cover`
+- `DemoBook_2026_(Cover)_sample.pdf` -> `Cover`
 - `Book_----_(1._Introduction).pdf` -> `1. Introduction`
 - `Book_----_(Book_IV).pdf` -> `Book IV`
 - `Book_----_(The_UN_and_NATO).pdf` -> `The UN And NATO`
