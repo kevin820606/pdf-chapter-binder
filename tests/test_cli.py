@@ -62,7 +62,7 @@ class CliTests(unittest.TestCase):
                     [
                         {"title": "Cover", "path": "cover.pdf"},
                         {"title": "Book IV", "path": "book4.pdf"},
-                    ]
+                    ],
                 ),
                 encoding="utf-8",
             )

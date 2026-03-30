@@ -26,7 +26,7 @@ def build_entries_from_paths(input_paths: Sequence[str | Path]) -> list[BinderEn
         path = Path(input_path)
         chapter_token = titles.extract_chapter_token(str(path))
         entries.append(
-            BinderEntry(title=titles.normalize_title(chapter_token), path=path)
+            BinderEntry(title=titles.normalize_title(chapter_token), path=path),
         )
     return entries
 
@@ -72,7 +72,7 @@ def build_outline_plan(
             OutlinePlanEntry(
                 title=entry.title,
                 page_number=page_number,
-            )
+            ),
         )
         page_number += page_count
 
@@ -98,7 +98,7 @@ def bind_pdfs(entries: Iterable[BinderEntry], output_path: str | Path) -> None:
             for source_pdf, plan_entry in zip(sources, outline_plan, strict=True):
                 output_pdf.pages.extend(source_pdf.pages)
                 outline.root.append(
-                    OutlineItem(plan_entry.title, plan_entry.page_number)
+                    OutlineItem(plan_entry.title, plan_entry.page_number),
                 )
 
         output_pdf.save(Path(output_path))

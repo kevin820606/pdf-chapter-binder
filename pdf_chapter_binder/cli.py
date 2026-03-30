@@ -27,7 +27,8 @@ def bind(
     manifest: Annotated[
         Path | None,
         typer.Option(
-            "--manifest", help="Path to a JSON manifest with title/path entries."
+            "--manifest",
+            help="Path to a JSON manifest with title/path entries.",
         ),
     ] = None,
     entry: Annotated[

@@ -146,7 +146,8 @@ class BinderPlanTests(unittest.TestCase):
         self.assertEqual(FakePdf.last_new_pdf.saved_to, Path("/tmp/output.pdf"))
         self.assertEqual(FakePdf.last_new_pdf.outline.root, expected_outline)
         self.assertEqual(
-            FakePdf.last_new_pdf.outline.root.appended_items, expected_outline
+            FakePdf.last_new_pdf.outline.root.appended_items,
+            expected_outline,
         )
         self.assertEqual(FakePdf.last_new_pdf.saved_outline_snapshot, expected_outline)
         self.assertTrue(all(pdf.closed for pdf in opened_pdfs))

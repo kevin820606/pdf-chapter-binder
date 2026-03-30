@@ -1,6 +1,5 @@
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 _CHAPTER_TOKEN_RE = re.compile(r"\(([^()]+)\)")
 _NUMBERED_CHAPTER_RE = re.compile(r"^\d+\._")
@@ -30,9 +29,7 @@ def _normalize_words(text: str) -> str:
     normalized_words = []
     for word in text.replace("_", " ").split():
         upper_word = word.upper()
-        if _ROMAN_NUMERAL_RE.match(word):
-            normalized_words.append(upper_word)
-        elif upper_word in _PRESERVED_ACRONYMS:
+        if _ROMAN_NUMERAL_RE.match(word) or upper_word in _PRESERVED_ACRONYMS:
             normalized_words.append(upper_word)
         else:
             normalized_words.append(word.capitalize())
