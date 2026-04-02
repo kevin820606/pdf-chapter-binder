@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Cover Page",
+    "path": "00_cover.pdf"
+  },
+  {
+    "title": "Introduction",
+    "path": "01_intro.pdf"
+  },
+  {
+    "title": "Chapter 1: Foundations",
+    "path": "chapters/ch1_foundations.pdf"
+  },
+  {
+    "title": "Appendix A",
+    "path": "appendices/appendix_a.pdf"
+  }
+]

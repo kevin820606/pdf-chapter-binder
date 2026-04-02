@@ -65,17 +65,30 @@ class TitleParsingTests(unittest.TestCase):
             "Appendix 1. Project Mars",
         )
 
-    def test_rejects_malformed_numbered_chapter_name(self):
-        with self.assertRaises(ValueError):
-            titles.normalize_title("1_Introduction")
+    def test_falls_back_to_filename_without_parentheses(self):
+        path = "/tmp/Book_----_Introduction.pdf"
+        self.assertEqual(titles.extract_chapter_token(path), "Book_----_Introduction")
 
-    def test_rejects_malformed_appendix_name(self):
-        with self.assertRaises(ValueError):
-            titles.normalize_title("Appendix_Acknowledgments")
+    def test_extracts_from_indexed_filename_with_page_number(self):
+        path = "2_1_Introduction_page_1.pdf"
+        self.assertEqual(titles.extract_chapter_token(path), "1_Introduction")
+        self.assertEqual(titles.normalize_title("1_Introduction"), "1. Introduction")
 
-    def test_rejects_filename_without_parenthesized_suffix(self):
-        with self.assertRaises(ValueError):
-            titles.extract_chapter_token("/tmp/Book_----_Introduction.pdf")
+    def test_extracts_from_complex_filename_without_index(self):
+        path = (
+            "13_Travel_and_Traffic_On_the_Geo-biography_of_"
+            "Imagined_Communities_page_207.pdf"
+        )
+        self.assertEqual(
+            titles.extract_chapter_token(path),
+            "Travel_and_Traffic_On_the_Geo-biography_of_Imagined_Communities",
+        )
+        self.assertEqual(
+            titles.normalize_title(
+                "Travel_and_Traffic_On_the_Geo-biography_of_Imagined_Communities"
+            ),
+            "Travel And Traffic On The Geo-biography Of Imagined Communities",
+        )
 
 
 if __name__ == "__main__":

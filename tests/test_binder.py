@@ -91,6 +91,13 @@ class BinderPlanTests(unittest.TestCase):
                 self.closed = False
                 self.outline = FakeOutlineContext()
 
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                self.close()
+                return False
+
             @classmethod
             def new(cls):
                 cls.last_new_pdf = cls()
@@ -182,6 +189,13 @@ class BinderPlanTests(unittest.TestCase):
                 self.pages = [object() for _ in range(page_count)]
                 self.closed = False
                 self.outline = FakeOutlineContext()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                self.close()
+                return False
 
             @classmethod
             def new(cls):
