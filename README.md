@@ -1,21 +1,14 @@
-# pdf-chapter-binder
+# pdf-outline
 
-`pdf-chapter-binder` merges a list of PDFs into a single output file and creates one top-level bookmark per input file.
-
-The merge order is exactly the order you pass on the command line. You can supply titles in three ways:
-
-- explicit JSON manifest
-- explicit `--entry "Title::path.pdf"` pairs
-- inferred from parenthesized filename tokens as a fallback
+`pdf-outline` provides tools for managing PDF tables of contents (outlines) and merging chapter PDFs.
 
 ## Features
 
-- Merges PDFs in the exact CLI order.
-- Supports explicit titles via manifest or `--entry`.
-- Falls back to automatic filename-derived titles.
-- Normalizes titles into readable text.
-- Preserves Roman numerals such as `IV` and a small acronym allowlist such as `UN`, `USA`, and `NATO`.
-- Exposes a simple Typer-based CLI.
+- **`bind`**: Merges a list of PDFs into a single output file in exact CLI order, creating top-level bookmarks for each input file.
+  - Supports explicit titles via JSON manifest or `--entry`.
+  - Falls back to automatic filename-derived titles (normalizes titles and preserves Roman numerals/acronyms).
+- **`toc`**: Extracts the table of contents from a PDF and prints it as a readable tree or structured JSON array.
+- **`set-toc`**: Writes a new hierarchical outline into an existing PDF from a JSON manifest.
 
 ## Installation
 
@@ -27,10 +20,14 @@ uv sync
 
 ## Usage
 
+### 1. Bind PDFs
+
+The `bind` command merges PDFs.
+
 Filename fallback:
 
 ```bash
-uv run pdf-chapter-binder --output merged.pdf \
+uv run pdf-outline bind --output merged.pdf \
   "/path/to/Book_----_(Cover_Page).pdf" \
   "/path/to/Book_----_(1._Introduction).pdf" \
   "/path/to/Book_----_(Book_IV).pdf"
@@ -39,7 +36,7 @@ uv run pdf-chapter-binder --output merged.pdf \
 Explicit entries:
 
 ```bash
-uv run pdf-chapter-binder --output merged.pdf \
+uv run pdf-outline bind --output merged.pdf \
   --entry "Cover::/path/to/cover.pdf" \
   --entry "Book IV::/path/to/book4.pdf"
 ```
@@ -47,22 +44,39 @@ uv run pdf-chapter-binder --output merged.pdf \
 Manifest:
 
 ```bash
-uv run pdf-chapter-binder --output merged.pdf --manifest chapters.json
+uv run pdf-outline bind --output merged.pdf --manifest chapters.json
 ```
 
-You can also invoke the module directly:
+### 2. Extract TOC
+
+Print the TOC of an existing PDF:
 
 ```bash
-uv run python -m pdf_chapter_binder.cli --output merged.pdf file1.pdf file2.pdf
+uv run pdf-outline toc input.pdf
+```
+Output:
+```
+1  Cover                                    p.0 (1 pages) [end: 1]
+  2  Preface                                p.1 (4 pages) [end: 5]
+1  1. Introduction                          p.5 (10 pages) [end: 15]
 ```
 
-Show CLI help:
+Or extract to JSON (which can be used by `set-toc` later):
+```bash
+uv run pdf-outline toc input.pdf --json > outline.json
+```
+
+### 3. Set TOC
+
+Overwrite or add a table of contents to a PDF using a JSON manifest. The manifest should be an array of objects with `level`, `title`, and `page_number` (0-based).
 
 ```bash
-uv run pdf-chapter-binder --help
+uv run pdf-outline set-toc input.pdf --manifest outline.json --output updated.pdf
 ```
 
-## Filename Rules
+*(If `--output` is omitted, it overwrites the input file in place).*
+
+## Filename Rules (for `bind`)
 
 When you use plain positional PDF paths, the tool extracts the first parenthesized token from the filename stem and turns that into the bookmark title.
 
@@ -76,10 +90,10 @@ Examples:
 
 If no parenthesized token is present, the tool raises a `ValueError`.
 
-## Manifest Format
+## Manifest Formats
 
+**For `bind`:**
 The manifest is a flat JSON array. Order is preserved exactly.
-
 ```json
 [
   {"title": "Cover", "path": "cover.pdf"},
@@ -87,13 +101,15 @@ The manifest is a flat JSON array. Order is preserved exactly.
 ]
 ```
 
-Input mode precedence:
-
-- `--manifest`
-- `--entry`
-- positional PDF paths
-
-Exactly one input mode is allowed per run.
+**For `set-toc`:**
+The manifest is a flat JSON array that defines hierarchy using the `level` property. `page_number` is 0-based. Additional fields like `page_count` and `end_page` are ignored when setting the TOC but are provided when extracting it.
+```json
+[
+  {"level": 1, "title": "Cover", "page_number": 0, "page_count": 1, "end_page": 1},
+  {"level": 2, "title": "Preface", "page_number": 1, "page_count": 4, "end_page": 5},
+  {"level": 1, "title": "1. Introduction", "page_number": 5, "page_count": 10, "end_page": 15}
+]
+```
 
 ## Development
 
@@ -101,7 +117,7 @@ Run the test suite with:
 
 ```bash
 UV_CACHE_DIR=.uv-cache uv run --no-sync python -m unittest -v \
-  tests.test_titles tests.test_cli tests.test_main tests.test_binder
+  tests.test_titles tests.test_cli tests.test_main tests.test_binder tests.test_outline
 ```
 
 ## License

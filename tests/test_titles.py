@@ -1,6 +1,6 @@
 import unittest
 
-from pdf_chapter_binder import titles
+from pdf_outline import titles
 
 
 class TitleParsingTests(unittest.TestCase):

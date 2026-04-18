@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdf-chapter-binder"
+name = "pdf-outline"
 version = "0.1.0"
 description = "Merge chapter PDFs in CLI order with auto-generated outline titles."
 readme = "README.md"
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pdf-chapter-binder = "pdf_chapter_binder.cli:main"
+pdf-outline = "pdf_outline.cli:main"
 
 [dependency-groups]
 dev = [

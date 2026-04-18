@@ -6,7 +6,7 @@ from pathlib import Path
 from pikepdf import OutlineItem, Pdf
 from pydantic import BaseModel, ConfigDict, Field
 
-from pdf_chapter_binder import titles
+from pdf_outline import titles
 
 
 class BinderEntry(BaseModel):

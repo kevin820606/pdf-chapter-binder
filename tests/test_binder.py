@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from pdf_chapter_binder import binder
+from pdf_outline import binder
 
 
 class BinderPlanTests(unittest.TestCase):

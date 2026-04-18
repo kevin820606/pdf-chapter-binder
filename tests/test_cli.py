@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from pdf_chapter_binder import binder, cli
+from pdf_outline import binder, cli
 
 RUNNER = CliRunner()
 
@@ -16,6 +16,7 @@ class CliTests(unittest.TestCase):
             result = RUNNER.invoke(
                 cli.app,
                 [
+                    "bind",
                     "--output",
                     "merged.pdf",
                     "book_(B).pdf",
@@ -37,6 +38,7 @@ class CliTests(unittest.TestCase):
             result = RUNNER.invoke(
                 cli.app,
                 [
+                    "bind",
                     "--output",
                     "merged.pdf",
                     "--entry",
@@ -70,6 +72,7 @@ class CliTests(unittest.TestCase):
                 result = RUNNER.invoke(
                     cli.app,
                     [
+                        "bind",
                         "--output",
                         "merged.pdf",
                         "--manifest",
@@ -87,13 +90,13 @@ class CliTests(unittest.TestCase):
         )
 
     def test_requires_output_argument(self):
-        result = RUNNER.invoke(cli.app, ["a.pdf"])
+        result = RUNNER.invoke(cli.app, ["bind", "a.pdf"])
 
         self.assertNotEqual(result.exit_code, 0)
         self.assertIsNotNone(result.exception)
 
     def test_requires_at_least_one_input(self):
-        result = RUNNER.invoke(cli.app, ["--output", "merged.pdf"])
+        result = RUNNER.invoke(cli.app, ["bind", "--output", "merged.pdf"])
 
         self.assertNotEqual(result.exit_code, 0)
         self.assertIsNotNone(result.exception)
@@ -102,6 +105,7 @@ class CliTests(unittest.TestCase):
         result = RUNNER.invoke(
             cli.app,
             [
+                "bind",
                 "--output",
                 "merged.pdf",
                 "--entry",
@@ -117,6 +121,7 @@ class CliTests(unittest.TestCase):
         result = RUNNER.invoke(
             cli.app,
             [
+                "bind",
                 "--output",
                 "merged.pdf",
                 "--entry",
@@ -129,10 +134,12 @@ class CliTests(unittest.TestCase):
 
     def test_main_passes_ordered_inputs_to_app(self):
         with patch.object(cli, "app") as app:
-            result = cli.main(["--output", "merged.pdf", "b.pdf", "a.pdf"])
+            result = cli.main(["bind", "--output", "merged.pdf", "b.pdf", "a.pdf"])
 
         self.assertEqual(result, 0)
-        app.assert_called_once_with(["--output", "merged.pdf", "b.pdf", "a.pdf"])
+        app.assert_called_once_with(
+            ["bind", "--output", "merged.pdf", "b.pdf", "a.pdf"]
+        )
 
 
 if __name__ == "__main__":
