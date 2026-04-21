@@ -37,7 +37,7 @@ class BinderPlanTests(unittest.TestCase):
             [entry.title for entry in plan],
             ["3. Later Chapter", "Cover Page", "1. Introduction"],
         )
-        self.assertEqual([entry.page_number for entry in plan], [0, 4, 5])
+        self.assertEqual([entry.start_page for entry in plan], [0, 4, 5])
 
     def test_bind_pdfs_opens_sources_in_input_order_and_writes_outlines(self):
         entries = [
@@ -50,15 +50,15 @@ class BinderPlanTests(unittest.TestCase):
         events = []
 
         class FakeOutlineItem:
-            def __init__(self, title, page_number):
+            def __init__(self, title, start_page):
                 self.title = title
-                self.page_number = page_number
+                self.start_page = start_page
 
             def __eq__(self, other):
                 return (
                     isinstance(other, FakeOutlineItem)
                     and self.title == other.title
-                    and self.page_number == other.page_number
+                    and self.start_page == other.start_page
                 )
 
         class FakeOutlineRoot(list):
@@ -168,9 +168,9 @@ class BinderPlanTests(unittest.TestCase):
         opened_pdfs = []
 
         class FakeOutlineItem:
-            def __init__(self, title, page_number):
+            def __init__(self, title, start_page):
                 self.title = title
-                self.page_number = page_number
+                self.start_page = start_page
 
         class FakeOutlineContext:
             def __init__(self):

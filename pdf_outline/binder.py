@@ -29,11 +29,11 @@ class OutlinePlanEntry(BaseModel):
 
     model_config = ConfigDict(frozen=True, populate_by_name=True)
 
-    def __init__(self, title: str, page_number: int, **kwargs):
-        super().__init__(title=title, page_number=page_number, **kwargs)
+    def __init__(self, title: str, start_page: int, **kwargs):
+        super().__init__(title=title, start_page=start_page, **kwargs)
 
     title: str
-    page_number: int
+    start_page: int
 
 
 def build_entries_from_paths(input_paths: Sequence[str | Path]) -> list[BinderEntry]:
@@ -73,16 +73,16 @@ def build_outline_plan(
 ) -> list[OutlinePlanEntry]:
     """Calculate the cumulative page offsets for the outline."""
     plan: list[OutlinePlanEntry] = []
-    page_number = 0
+    start_page = 0
 
     for entry, page_count in zip(entries, page_counts, strict=True):
         plan.append(
             OutlinePlanEntry(
                 title=entry.title,
-                page_number=page_number,
+                start_page=start_page,
             ),
         )
-        page_number += page_count
+        start_page += page_count
 
     return plan
 
@@ -108,7 +108,7 @@ def bind_pdfs(entries: Iterable[BinderEntry], output_path: str | Path) -> None:
             for source_pdf, plan_entry in zip(sources, outline_plan, strict=True):
                 output_pdf.pages.extend(source_pdf.pages)
                 outline.root.append(
-                    OutlineItem(plan_entry.title, plan_entry.page_number),
+                    OutlineItem(plan_entry.title, plan_entry.start_page),
                 )
 
         output_pdf.save(Path(output_path))

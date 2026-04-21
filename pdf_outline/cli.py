@@ -77,13 +77,13 @@ def toc(
         for entry in entries:
             indent = "  " * (entry.level - 1)
             count_str = (
-                f"({entry.page_count} pages) [end: {entry.end_page}]"
+                f"[end: {entry.end_page}] ({entry.page_count} pages)"
                 if entry.page_count is not None
                 else ""
             )
             typer.echo(
                 f"{indent}{entry.level}  {entry.title:<40} "
-                f"p.{entry.page_number} {count_str}"
+                f"p.{entry.start_page} {count_str}"
             )
 
 

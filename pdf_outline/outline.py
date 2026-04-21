@@ -13,9 +13,9 @@ class TocEntry(BaseModel):
 
     level: int
     title: str
-    page_number: int
-    page_count: int | None = None
+    start_page: int
     end_page: int | None = None
+    page_count: int | None = None
 
 
 def _resolve_page_number(
@@ -80,13 +80,13 @@ def extract_toc(pdf_path: str | Path) -> list[TocEntry]:
 
         def _walk(item: OutlineItem, level: int) -> None:
             page_num = _resolve_page_number(pdf, item, page_map)
-            page_num = page_num if page_num is not None else 0
+            page_num = (page_num + 1) if page_num is not None else 1
 
             entries.append(
                 TocEntry(
                     level=level,
                     title=item.title or "",
-                    page_number=page_num,
+                    start_page=page_num,
                 ),
             )
             for child in item.children:
@@ -97,13 +97,14 @@ def extract_toc(pdf_path: str | Path) -> list[TocEntry]:
                 _walk(item, 1)
 
     for i, entry in enumerate(entries):
-        end_page = total_pages
+        next_start = total_pages + 1
         for j in range(i + 1, len(entries)):
             if entries[j].level <= entry.level:
-                end_page = entries[j].page_number
+                next_start = entries[j].start_page
                 break
 
-        page_count = max(0, end_page - entry.page_number)
+        page_count = max(0, next_start - entry.start_page)
+        end_page = max(entry.start_page, next_start - 1)
         entries[i] = entry.model_copy(
             update={"page_count": page_count, "end_page": end_page}
         )
@@ -129,7 +130,8 @@ def set_toc(
             stack: list[Any] = [outline.root]
 
             for entry in entries:
-                new_item = OutlineItem(entry.title, entry.page_number)
+                page_index = max(0, entry.start_page - 1)
+                new_item = OutlineItem(entry.title, page_index)
 
                 # Truncate stack if level is <= current nesting depth
                 if entry.level < len(stack):

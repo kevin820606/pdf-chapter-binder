@@ -56,9 +56,9 @@ uv run pdf-outline toc input.pdf
 ```
 Output:
 ```
-1  Cover                                    p.0 (1 pages) [end: 1]
-  2  Preface                                p.1 (4 pages) [end: 5]
-1  1. Introduction                          p.5 (10 pages) [end: 15]
+1  Cover                                    p.0 [end: 1] (1 pages)
+  2  Preface                                p.1 [end: 5] (4 pages)
+1  1. Introduction                          p.5 [end: 15] (10 pages)
 ```
 
 Or extract to JSON (which can be used by `set-toc` later):
@@ -68,7 +68,7 @@ uv run pdf-outline toc input.pdf --json > outline.json
 
 ### 3. Set TOC
 
-Overwrite or add a table of contents to a PDF using a JSON manifest. The manifest should be an array of objects with `level`, `title`, and `page_number` (0-based).
+Overwrite or add a table of contents to a PDF using a JSON manifest. The manifest should be an array of objects with `level`, `title`, and `start_page` (1-based).
 
 ```bash
 uv run pdf-outline set-toc input.pdf --manifest outline.json --output updated.pdf
@@ -102,12 +102,12 @@ The manifest is a flat JSON array. Order is preserved exactly.
 ```
 
 **For `set-toc`:**
-The manifest is a flat JSON array that defines hierarchy using the `level` property. `page_number` is 0-based. Additional fields like `page_count` and `end_page` are ignored when setting the TOC but are provided when extracting it.
+The manifest is a flat JSON array that defines hierarchy using the `level` property. `start_page` is 1-based. Additional fields like `page_count` and `end_page` are ignored when setting the TOC but are provided when extracting it.
 ```json
 [
-  {"level": 1, "title": "Cover", "page_number": 0, "page_count": 1, "end_page": 1},
-  {"level": 2, "title": "Preface", "page_number": 1, "page_count": 4, "end_page": 5},
-  {"level": 1, "title": "1. Introduction", "page_number": 5, "page_count": 10, "end_page": 15}
+  {"level": 1, "title": "Cover", "start_page": 1, "end_page": 1, "page_count": 1},
+  {"level": 2, "title": "Preface", "start_page": 2, "end_page": 5, "page_count": 4},
+  {"level": 1, "title": "1. Introduction", "start_page": 6, "end_page": 15, "page_count": 10}
 ]
 ```
 
