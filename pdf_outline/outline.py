@@ -14,6 +14,7 @@ class TocEntry(BaseModel):
     level: int
     title: str
     start_page: int
+    index: int | None = None
     end_page: int | None = None
     page_count: int | None = None
 
@@ -96,6 +97,7 @@ def extract_toc(pdf_path: str | Path) -> list[TocEntry]:
             for item in outline.root:
                 _walk(item, 1)
 
+    current_index = 1
     for i, entry in enumerate(entries):
         next_start = total_pages + 1
         for j in range(i + 1, len(entries)):
@@ -105,9 +107,16 @@ def extract_toc(pdf_path: str | Path) -> list[TocEntry]:
 
         page_count = max(0, next_start - entry.start_page)
         end_page = max(entry.start_page, next_start - 1)
-        entries[i] = entry.model_copy(
-            update={"page_count": page_count, "end_page": end_page}
-        )
+
+        update_dict: dict[str, Any] = {
+            "page_count": page_count,
+            "end_page": end_page,
+        }
+        if entry.level == 1:
+            update_dict["index"] = current_index
+            current_index += 1
+
+        entries[i] = entry.model_copy(update=update_dict)
 
     return entries
 

@@ -1,13 +1,16 @@
 # pdf-outline
 
-`pdf-outline` provides tools for managing PDF tables of contents (outlines) and merging chapter PDFs.
+`pdf-outline` provides tools for managing PDF tables of contents (outlines), merging chapter PDFs, and splitting books into chapter-based files.
 
 ## Features
 
-- **`bind`**: Merges a list of PDFs into a single output file in exact CLI order, creating top-level bookmarks for each input file.
+- **`bind`**: Merges multiple PDFs into a single file in CLI order, creating top-level bookmarks for each input.
   - Supports explicit titles via JSON manifest or `--entry`.
-  - Falls back to automatic filename-derived titles (normalizes titles and preserves Roman numerals/acronyms).
-- **`toc`**: Extracts the table of contents from a PDF and prints it as a readable tree or structured JSON array.
+  - Automatically normalizes titles from filenames (preserves Roman numerals/acronyms).
+- **`toc`**: Extracts a PDF's table of contents as a readable tree or structured JSON.
+  - Assigns a sequential **index** to top-level entries to represent inferred chapter order.
+- **`split`**: Divides a PDF into separate files based on its level-1 TOC entries.
+  - Automatically names files using the chapter index and a sanitized title.
 - **`set-toc`**: Writes a new hierarchical outline into an existing PDF from a JSON manifest.
 
 ## Installation
@@ -22,102 +25,81 @@ uv sync
 
 ### 1. Bind PDFs
 
-The `bind` command merges PDFs.
-
-Filename fallback:
+Merge multiple PDF files into one.
 
 ```bash
 uv run pdf-outline bind --output merged.pdf \
-  "/path/to/Book_----_(Cover_Page).pdf" \
-  "/path/to/Book_----_(1._Introduction).pdf" \
-  "/path/to/Book_----_(Book_IV).pdf"
-```
-
-Explicit entries:
-
-```bash
-uv run pdf-outline bind --output merged.pdf \
-  --entry "Cover::/path/to/cover.pdf" \
-  --entry "Book IV::/path/to/book4.pdf"
-```
-
-Manifest:
-
-```bash
-uv run pdf-outline bind --output merged.pdf --manifest chapters.json
+  "/path/to/Book_(Cover).pdf" \
+  "/path/to/Book_(1._Introduction).pdf" \
+  "/path/to/Book_(Chapter_1).pdf"
 ```
 
 ### 2. Extract TOC
 
-Print the TOC of an existing PDF:
+Print the TOC of an existing PDF. Top-level entries are assigned a sequential `Idx` for easy identification as chapters.
 
 ```bash
 uv run pdf-outline toc input.pdf
 ```
 Output:
 ```
-1  Cover                                    p.0 [end: 1] (1 pages)
-  2  Preface                                p.1 [end: 5] (4 pages)
-1  1. Introduction                          p.5 [end: 15] (10 pages)
+[Idx: 01] 1  Cover                                    p.1 [end: 1] (1 pages)
+[Idx: 02] 1  Preface                                  p.2 [end: 5] (4 pages)
+[Idx: 03] 1  1. Introduction                          p.6 [end: 15] (10 pages)
 ```
 
-Or extract to JSON (which can be used by `set-toc` later):
+Extract to JSON:
 ```bash
 uv run pdf-outline toc input.pdf --json > outline.json
 ```
 
-### 3. Set TOC
+### 3. Split by Chapters
 
-Overwrite or add a table of contents to a PDF using a JSON manifest. The manifest should be an array of objects with `level`, `title`, and `start_page` (1-based).
+Split a single book PDF into separate files named by their top-level TOC entries.
+
+```bash
+# Saves files like 01_Cover.pdf, 02_Preface.pdf to the 'chapters' folder
+uv run pdf-outline split book.pdf --outdir chapters
+
+# Omit the 01_ prefix
+uv run pdf-outline split book.pdf --no-number
+```
+
+### 4. Set TOC
+
+Overwrite or add a table of contents using a JSON manifest. `start_page` is 1-based.
 
 ```bash
 uv run pdf-outline set-toc input.pdf --manifest outline.json --output updated.pdf
 ```
 
-*(If `--output` is omitted, it overwrites the input file in place).*
-
 ## Filename Rules (for `bind`)
 
-When you use plain positional PDF paths, the tool extracts the first parenthesized token from the filename stem and turns that into the bookmark title.
+The tool extracts the first parenthesized token from the filename stem to use as the bookmark title.
 
 Examples:
-
-- `DemoBook_2026_(Cover)_sample.pdf` -> `Cover`
-- `Book_----_(1._Introduction).pdf` -> `1. Introduction`
-- `Book_----_(Book_IV).pdf` -> `Book IV`
-- `Book_----_(The_UN_and_NATO).pdf` -> `The UN And NATO`
-- `Book_----_(Appendix_1._Project_Mars).pdf` -> `Appendix 1. Project Mars`
-
-If no parenthesized token is present, the tool raises a `ValueError`.
+- `Book_(Cover).pdf` -> `Cover`
+- `Book_(1._Introduction).pdf` -> `1. Introduction`
+- `Book_(The_UN_and_NATO).pdf` -> `The UN And NATO`
 
 ## Manifest Formats
 
-**For `bind`:**
-The manifest is a flat JSON array. Order is preserved exactly.
-```json
-[
-  {"title": "Cover", "path": "cover.pdf"},
-  {"title": "Book IV", "path": "book4.pdf"}
-]
-```
-
 **For `set-toc`:**
-The manifest is a flat JSON array that defines hierarchy using the `level` property. `start_page` is 1-based. Additional fields like `page_count` and `end_page` are ignored when setting the TOC but are provided when extracting it.
+Hierarchy is defined by the `level` property.
 ```json
 [
-  {"level": 1, "title": "Cover", "start_page": 1, "end_page": 1, "page_count": 1},
-  {"level": 2, "title": "Preface", "start_page": 2, "end_page": 5, "page_count": 4},
-  {"level": 1, "title": "1. Introduction", "start_page": 6, "end_page": 15, "page_count": 10}
+  {"level": 1, "title": "Cover", "start_page": 1, "index": 1},
+  {"level": 2, "title": "Preface", "start_page": 2, "index": null},
+  {"level": 1, "title": "Introduction", "start_page": 6, "index": 2}
 ]
 ```
 
 ## Development
 
-Run the test suite with:
+Run the full test suite:
 
 ```bash
-UV_CACHE_DIR=.uv-cache uv run --no-sync python -m unittest -v \
-  tests.test_titles tests.test_cli tests.test_main tests.test_binder tests.test_outline
+uv run python -m unittest discover tests
 ```
 
 ## License

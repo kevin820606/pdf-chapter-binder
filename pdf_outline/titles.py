@@ -72,6 +72,17 @@ def _normalize_appendix_title(title: str) -> str:
     return f"Appendix {_normalize_numbered_chapter_title(appendix_title)}"
 
 
+def slugify_title(title: str) -> str:
+    """Turn a title into a filesystem-friendly string."""
+    # Replace dots, underscores, and whitespace with hyphens
+    s = re.sub(r"[\s_.]+", "-", title)
+    # Remove everything except alphanumeric and hyphens
+    s = re.sub(r"[^\w-]", "", s)
+    # Consolidate multiple hyphens and strip from ends
+    s = re.sub(r"-+", "-", s)
+    return s.strip("-")
+
+
 def normalize_title(title: str) -> str:
     # Handle '1_Introduction' -> '1. Introduction'
     if re.match(r"^\d+_", title) and not _NUMBERED_CHAPTER_RE.match(title):

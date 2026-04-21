@@ -25,10 +25,12 @@ class TestOutline(unittest.TestCase):
             self.assertEqual(entries[0].title, "Page 1")
             self.assertEqual(entries[0].level, 1)
             self.assertEqual(entries[0].start_page, 1)
+            self.assertEqual(entries[0].index, 1)
 
             self.assertEqual(entries[1].title, "Page 2")
             self.assertEqual(entries[1].level, 1)
             self.assertEqual(entries[1].start_page, 2)
+            self.assertEqual(entries[1].index, 2)
 
     def test_extract_toc_nested(self):
         with TemporaryDirectory() as tmpdir:
@@ -48,10 +50,12 @@ class TestOutline(unittest.TestCase):
             self.assertEqual(entries[0].title, "Chap 1")
             self.assertEqual(entries[0].level, 1)
             self.assertEqual(entries[0].start_page, 1)
+            self.assertEqual(entries[0].index, 1)
 
             self.assertEqual(entries[1].title, "Sec 1.1")
             self.assertEqual(entries[1].level, 2)
             self.assertEqual(entries[1].start_page, 2)
+            self.assertEqual(entries[1].index, None)
 
     def test_extract_toc_empty(self):
         with TemporaryDirectory() as tmpdir:
@@ -74,16 +78,36 @@ class TestOutline(unittest.TestCase):
 
             entries = [
                 TocEntry(
-                    level=1, title="Chap 1", start_page=1, end_page=2, page_count=2
+                    level=1,
+                    title="Chap 1",
+                    start_page=1,
+                    end_page=2,
+                    page_count=2,
+                    index=1,
                 ),
                 TocEntry(
-                    level=2, title="Sec 1.1", start_page=2, end_page=2, page_count=1
+                    level=2,
+                    title="Sec 1.1",
+                    start_page=2,
+                    end_page=2,
+                    page_count=1,
+                    index=None,
                 ),
                 TocEntry(
-                    level=2, title="Sec 1.2", start_page=3, end_page=3, page_count=0
+                    level=2,
+                    title="Sec 1.2",
+                    start_page=3,
+                    end_page=3,
+                    page_count=0,
+                    index=None,
                 ),
                 TocEntry(
-                    level=1, title="Chap 2", start_page=3, end_page=3, page_count=1
+                    level=1,
+                    title="Chap 2",
+                    start_page=3,
+                    end_page=3,
+                    page_count=1,
+                    index=2,
                 ),
             ]
 
@@ -113,12 +137,13 @@ class TestOutline(unittest.TestCase):
                 outline.root.append(OutlineItem("Old", 0))
             pdf.save(pdf_path)
 
-            entries = [TocEntry(level=1, title="New", start_page=1)]
+            entries = [TocEntry(level=1, title="New", start_page=1, index=1)]
             set_toc(pdf_path, entries)
 
             extracted = extract_toc(pdf_path)
             self.assertEqual(len(extracted), 1)
             self.assertEqual(extracted[0].title, "New")
+            self.assertEqual(extracted[0].index, 1)
 
 
 if __name__ == "__main__":
